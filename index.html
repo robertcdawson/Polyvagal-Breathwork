@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Polyvagal Breathwork Practice</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .gradient-bg {
+            background: linear-gradient(135deg, #a8e0ff 0%, #8ee3f8 100%);
+            animation: gradient-animation 20s ease infinite;
+            background-size: 200% 200%;
+        }
+        @keyframes gradient-animation {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        .preset-btn.active {
+            background-color: #3b82f6;
+            color: white;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+
+        /* Circle Fill Animation Styles */
+        #circle {
+            position: relative;
+            background-color: rgba(255, 255, 255, 0.2); /* Base circle color */
+            overflow: hidden; /* Important for the fill effect */
+            transition: transform 0.5s ease-in-out;
+        }
+
+        #circle-fill {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background-color: rgba(255, 255, 255, 0.7); /* Fill color */
+            width: 100%;
+            height: 0; /* Starts empty */
+            /* Transition is now set dynamically via JavaScript */
+        }
+    </style>
+</head>
+<body class="gradient-bg text-gray-800">
+
+    <div class="min-h-screen flex flex-col items-center justify-center p-4 relative z-10">
+        <div class="w-full max-w-lg mx-auto bg-white/40 backdrop-blur-md rounded-2xl shadow-lg p-6 md:p-8 text-center">
+            <h1 class="text-2xl md:text-3xl font-bold text-gray-900 mb-2">Polyvagal Breathwork</h1>
+            <p class="text-gray-700 mb-6">Sync your breath with the visual guide to calm your nervous system.</p>
+
+            <div class="relative w-48 h-48 md:w-56 md:h-56 mx-auto mb-4 flex items-center justify-center">
+                <!-- The main circle container -->
+                <div id="circle" class="w-full h-full rounded-full shadow-inner">
+                    <!-- The animated fill element -->
+                    <div id="circle-fill"></div>
+                </div>
+                <!-- Text content is now a sibling, overlaid using absolute positioning -->
+                <div class="absolute inset-0 flex flex-col items-center justify-center z-10">
+                    <p id="instruction" class="text-2xl font-semibold text-gray-800">Ready?</p>
+                    <p id="timer" class="text-5xl font-bold text-gray-900">-</p>
+                </div>
+            </div>
+            <p id="sessionTimeDisplay" class="text-gray-700 h-6 mb-4"></p>
+
+             <div class="mb-6">
+                <label for="durationInput" class="block text-gray-700 mb-2">Session Duration (minutes)</label>
+                <input type="number" id="durationInput" class="w-24 p-2 text-center bg-white/50 rounded-lg border-2 border-transparent focus:border-blue-400 focus:outline-none" value="5" min="0">
+            </div>
+
+            <!-- ** FIX: Button container to prevent layout shift ** -->
+            <div class="flex justify-center mb-8">
+                <div class="relative w-28 h-[52px]">
+                    <button id="startButton" class="absolute inset-0 w-full h-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-4 rounded-full shadow-md transition-all transform hover:scale-105 active:scale-95">
+                        Start
+                    </button>
+                    <button id="stopButton" class="absolute inset-0 w-full h-full bg-gray-400 hover:bg-gray-500 text-white font-bold py-3 px-4 rounded-full shadow-md transition-all transform hover:scale-105 active:scale-95 hidden">
+                        Stop
+                    </button>
+                </div>
+            </div>
+
+            <div class="mb-8">
+                <h3 class="text-lg font-semibold text-gray-800 text-center border-b border-white/50 pb-2 mb-4">Presets</h3>
+                <div id="presets" class="grid grid-cols-2 md:grid-cols-4 gap-2">
+                    <button class="preset-btn p-2 bg-white/30 rounded-lg transition-colors" data-preset="extendedExhale">Extended Exhale</button>
+                    <button class="preset-btn p-2 bg-white/30 rounded-lg transition-colors" data-preset="boxBreathing">Box Breathing</button>
+                    <button class="preset-btn p-2 bg-white/30 rounded-lg transition-colors" data-preset="resonance">Resonance</button>
+                    <button class="preset-btn p-2 bg-white/30 rounded-lg transition-colors" data-preset="vooBreathing">VOO Breath</button>
+                </div>
+                <p id="preset-description" class="text-sm text-gray-700 mt-4 h-16 text-center">Select a preset or create your own custom timing below.</p>
+            </div>
+
+            <div id="settings" class="space-y-4 text-left transition-opacity duration-300">
+                 <div class="flex items-center justify-between">
+                    <label for="inhale" class="text-gray-700">Inhale (seconds)</label>
+                    <input type="number" id="inhale" class="w-20 p-2 text-center bg-white/50 rounded-lg border-2 border-transparent focus:border-blue-400 focus:outline-none" value="4" min="1">
+                </div>
+                <div class="flex items-center justify-between">
+                    <label for="holdIn" class="text-gray-700">Hold (after inhale)</label>
+                    <input type="number" id="holdIn" class="w-20 p-2 text-center bg-white/50 rounded-lg border-2 border-transparent focus:border-blue-400 focus:outline-none" value="4" min="0">
+                </div>
+                <div class="flex items-center justify-between">
+                    <label for="exhale" class="text-gray-700">Exhale (seconds)</label>
+                    <input type="number" id="exhale" class="w-20 p-2 text-center bg-white/50 rounded-lg border-2 border-transparent focus:border-blue-400 focus:outline-none" value="6" min="1">
+                </div>
+                <div class="flex items-center justify-between">
+                    <label for="holdOut" class="text-gray-700">Hold (after exhale)</label>
+                    <input type="number" id="holdOut" class="w-20 p-2 text-center bg-white/50 rounded-lg border-2 border-transparent focus:border-blue-400 focus:outline-none" value="0" min="0">
+                </div>
+            </div>
+        </div>
+
+         <footer class="mt-8 text-center text-white/90 text-sm">
+            <p>This is a tool for practice and not medical advice. Consult a professional for guidance.</p>
+        </footer>
+    </div>
+
+    <script>
+        // Get references to all the necessary HTML elements
+        const circleFill = document.getElementById('circle-fill');
+        const instruction = document.getElementById('instruction');
+        const timerDisplay = document.getElementById('timer');
+        const startButton = document.getElementById('startButton');
+        const stopButton = document.getElementById('stopButton');
+        const settingsDiv = document.getElementById('settings');
+        const presetsDiv = document.getElementById('presets');
+        const presetDescription = document.getElementById('preset-description');
+        const durationInput = document.getElementById('durationInput');
+        const sessionTimeDisplay = document.getElementById('sessionTimeDisplay');
+        const inhaleInput = document.getElementById('inhale');
+        const holdInInput = document.getElementById('holdIn');
+        const exhaleInput = document.getElementById('exhale');
+        const holdOutInput = document.getElementById('holdOut');
+        const customInputs = [inhaleInput, holdInInput, exhaleInput, holdOutInput];
+
+        // --- State and Configuration ---
+        let isRunning = false;
+        let breathCycleTimeout;
+        let countdownInterval;
+        let sessionInterval;
+        let sessionEndTime;
+        let currentPhaseIndex = 0;
+        
+        let cycle = [
+            { name: 'Inhale', duration: 4, fillHeight: '100%', color: 'rgba(132, 204, 22, 0.6)' }, // lime-400
+            { name: 'Hold In', duration: 4, fillHeight: '100%', color: 'rgba(96, 165, 250, 0.6)' }, // blue-400
+            { name: 'Exhale', duration: 6, fillHeight: '0%', color: 'rgba(34, 197, 94, 0.6)' }, // green-500
+            { name: 'Hold Out', duration: 0, fillHeight: '0%', color: 'rgba(156, 163, 175, 0.6)' }  // gray-400
+        ];
+        
+        const presets = {
+            extendedExhale: { values: [4, 2, 8, 0], duration: 2, desc: "Promotes calm by making the exhale longer than the inhale. Minimum effective dose: 2 minutes." },
+            boxBreathing: { values: [4, 4, 4, 4], duration: 2, desc: "A simple technique to calm stress and improve focus by making all breath phases equal. Minimum effective dose: 2 minutes." },
+            resonance: { values: [5.5, 0, 5.5, 0], duration: 5, desc: "Aims to maximize heart-rate variability (HRV) by breathing at a resonant frequency. Minimum effective dose: 5 minutes." },
+            vooBreathing: { values: [4, 1, 8, 0], duration: 3, desc: "On the exhale, create a deep, vibrating 'VOO' sound to stimulate the vagus nerve. Minimum effective dose: 3 minutes." }
+        };
+
+        // --- Functions ---
+        
+        function applyPreset(presetName) {
+            if (!presets[presetName]) return;
+            const preset = presets[presetName];
+            [inhaleInput.value, holdInInput.value, exhaleInput.value, holdOutInput.value] = preset.values;
+            durationInput.value = preset.duration;
+            presetDescription.textContent = preset.desc;
+            document.querySelectorAll('.preset-btn').forEach(btn => btn.classList.toggle('active', btn.dataset.preset === presetName));
+            updateSettings();
+        }
+        
+        function clearActivePreset() {
+             document.querySelectorAll('.preset-btn').forEach(btn => btn.classList.remove('active'));
+             presetDescription.textContent = "Custom timing selected. Adjust the values below.";
+        }
+        
+        function updateSettings() {
+            cycle[0].duration = Math.max(1, parseFloat(inhaleInput.value));
+            cycle[1].duration = Math.max(0, parseFloat(holdInInput.value));
+            cycle[2].duration = Math.max(1, parseFloat(exhaleInput.value));
+            cycle[3].duration = Math.max(0, parseFloat(holdOutInput.value));
+        }
+
+        function startBreathing() {
+            if (isRunning) return;
+            isRunning = true;
+            
+            startButton.classList.add('hidden');
+            stopButton.classList.remove('hidden');
+            [settingsDiv, presetsDiv, durationInput].forEach(el => el.classList.add('opacity-50', 'pointer-events-none'));
+
+            updateSettings();
+            currentPhaseIndex = -1;
+            runNextPhase();
+
+            const durationMinutes = parseFloat(durationInput.value);
+            if (durationMinutes > 0) {
+                sessionEndTime = Date.now() + durationMinutes * 60 * 1000;
+                sessionInterval = setInterval(checkSessionEnd, 1000);
+                updateSessionTimeDisplay();
+            }
+        }
+
+        function stopBreathing(isSessionComplete = false) {
+            if (!isRunning && !isSessionComplete && instruction.textContent === 'Ready?') return;
+            isRunning = false;
+            
+            clearTimeout(breathCycleTimeout);
+            clearInterval(countdownInterval);
+            clearInterval(sessionInterval);
+            
+            startButton.classList.remove('hidden');
+            stopButton.classList.add('hidden');
+            [settingsDiv, presetsDiv, durationInput].forEach(el => el.classList.remove('opacity-50', 'pointer-events-none'));
+            
+            instruction.textContent = isSessionComplete ? 'Session Complete!' : 'Ready?';
+            timerDisplay.textContent = '-';
+            sessionTimeDisplay.textContent = '';
+            
+            // FIX: Reset fill animation instantly
+            circleFill.style.transition = 'none';
+            circleFill.style.height = '0%';
+        }
+        
+        function updateSessionTimeDisplay() {
+             const now = Date.now();
+             const remaining = Math.round((sessionEndTime - now) / 1000);
+             if (remaining < 0) {
+                sessionTimeDisplay.textContent = '';
+                return;
+             }
+             const minutes = Math.floor(remaining / 60);
+             const seconds = remaining % 60;
+             sessionTimeDisplay.textContent = `Time Remaining: ${minutes}:${seconds.toString().padStart(2, '0')}`;
+        }
+
+        function checkSessionEnd() {
+            if (Date.now() >= sessionEndTime) {
+                stopBreathing(true);
+            } else {
+                updateSessionTimeDisplay();
+            }
+        }
+
+        function runNextPhase() {
+            if (!isRunning) return;
+
+            currentPhaseIndex = (currentPhaseIndex + 1) % cycle.length;
+            const phase = cycle[currentPhaseIndex];
+            
+            if (phase.duration === 0) {
+                runNextPhase();
+                return;
+            }
+
+            instruction.textContent = phase.name;
+            
+            // Control the fill animation
+            circleFill.style.transition = `height ${phase.duration}s linear`;
+            circleFill.style.backgroundColor = phase.color;
+            circleFill.style.height = phase.fillHeight;
+            
+            let countdown = phase.duration;
+            timerDisplay.textContent = Math.ceil(countdown);
+            
+            clearInterval(countdownInterval);
+            countdownInterval = setInterval(() => {
+                countdown -= 1;
+                timerDisplay.textContent = countdown > 0 ? Math.ceil(countdown) : '...';
+            }, 1000);
+
+            clearTimeout(breathCycleTimeout);
+            breathCycleTimeout = setTimeout(runNextPhase, phase.duration * 1000);
+        }
+        
+        // Event Listeners
+        startButton.addEventListener('click', startBreathing);
+        stopButton.addEventListener('click', () => stopBreathing(false));
+        presetsDiv.addEventListener('click', (e) => {
+            if (e.target.classList.contains('preset-btn')) {
+                applyPreset(e.target.dataset.preset);
+            }
+        });
+        customInputs.forEach(input => input.addEventListener('input', clearActivePreset));
+
+        // Initialisation
+        window.onload = () => {
+            applyPreset('extendedExhale');
+            stopBreathing();
+        };
+    </script>
+</body>
+</html>
