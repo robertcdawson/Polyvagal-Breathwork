@@ -325,7 +325,8 @@
                 }, 200);
 
                 // Circle Animation
-                UIElements.circleFill.style.transition = `transform ${phase.duration}s linear, background-color 1s ease`;
+                const COLOR_TRANSITION_DURATION_S = 1;
+                UIElements.circleFill.style.transition = `transform ${phase.duration}s linear, background-color ${COLOR_TRANSITION_DURATION_S}s ease`;
                 UIElements.circleFill.className = `absolute inset-0 z-0 ${phase.className}`;
                 UIElements.circleFill.style.transform = `scale(${phase.scale})`;
 
