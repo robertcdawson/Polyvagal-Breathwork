@@ -104,11 +104,11 @@
             <!-- CONTROLS -->
             <div class="grid grid-cols-2 gap-4 mb-6">
                 <div>
-                    <label class="block mb-2">Practice By</label>
-                    <select id="practiceMode" class="w-full p-2 text-center bg-white/50 rounded-lg border-2 border-transparent focus:border-blue-400 focus:outline-none">
-                        <option value="time">Time</option>
-                        <option value="cycles">Cycles</option>
-                    </select>
+            <label class="block mb-2">Practice By</label>
+            <select id="practiceMode" class="w-full p-2 text-center bg-white/50 rounded-lg border-2 border-transparent focus:border-blue-400 focus:outline-none">
+                <option value="cycles" selected>Cycles</option>
+                <option value="time">Time</option>
+            </select>
                 </div>
                 <div>
                     <label id="durationLabel" class="block mb-2">Duration (min)</label>
@@ -212,7 +212,7 @@
         let state = {
             isRunning: false,
             audioEnabled: false,
-            currentPracticeMode: 'time',
+            currentPracticeMode: 'cycles',
             currentPreset: 'extendedExhale',
             userId: null,
             isAuthReady: false
@@ -407,7 +407,11 @@
             UIElements.audioToggle.classList.toggle('btn-primary', state.audioEnabled);
             if (state.audioEnabled && !synth) setupAudio();
         });
-        UIElements.themeSelector.addEventListener('change', (e) => UIElements.body.className = e.target.value === 'default' ? '' : e.target.value);
+        UIElements.themeSelector.addEventListener('change', (e) => {
+            const theme = e.target.value;
+            UIElements.body.className = theme === 'default' ? '' : theme;
+            localStorage.setItem('theme', theme);
+        });
         UIElements.historyButton.addEventListener('click', () => UIElements.historyLog.classList.toggle('hidden'));
         UIElements.startButton.addEventListener('click', startBreathing);
         UIElements.stopButton.addEventListener('click', () => stopBreathing(false));
@@ -450,7 +454,19 @@
         }
         
         window.onload = () => {
+            // Load theme
+            const savedTheme = localStorage.getItem('theme');
+            if (savedTheme) {
+                UIElements.themeSelector.value = savedTheme;
+                UIElements.body.className = savedTheme === 'default' ? '' : savedTheme;
+            }
+
             applyPreset('extendedExhale');
+            
+            // Ensure UI matches default 'cycles' mode
+            UIElements.practiceMode.value = state.currentPracticeMode;
+            UIElements.durationLabel.textContent = state.currentPracticeMode === 'time' ? 'Duration (min)' : 'Number of Cycles';
+            
             updateUIForState(false);
         };
     </script>
