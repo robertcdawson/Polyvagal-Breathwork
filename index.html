@@ -7,6 +7,8 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Audio Library -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.7.77/Tone.js"></script>
+    <!-- Temporal Polyfill for iOS Safari and older browsers -->
+    <script src="https://cdn.jsdelivr.net/npm/@js-temporal/polyfill@0.4.4/dist/index.umd.js"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
@@ -235,7 +237,16 @@
             isAuthReady: false
         };
 
-        let timers = { breathCycle: null, countdown: null, session: null };
+        let timers = { breathCycle: null, countdown: null, session: null, instruction: null };
+        
+        // Use Temporal API if available (via polyfill), otherwise fallback to Date.now()
+        const Temporal = window.Temporal || globalThis.Temporal;
+        const getNowMs = () => {
+            if (Temporal && Temporal.Now && typeof Temporal.Now.instant === 'function') {
+                return Temporal.Now.instant().epochMilliseconds;
+            }
+            return Date.now();
+        };
         let sessionEndTime, cyclesRemaining;
         
         const presets = {
@@ -305,7 +316,7 @@
             updateUIForState(true);
             let currentPhaseIndex = -1;
             if (state.currentPracticeMode === 'time') {
-                sessionEndTime = Date.now() + parseFloat(UIElements.durationInput.value) * 60000;
+                sessionEndTime = getNowMs() + parseFloat(UIElements.durationInput.value) * 60000;
                 timers.session = setInterval(checkSessionTime, 1000);
             } else {
                 cyclesRemaining = parseInt(UIElements.durationInput.value, 10);
@@ -322,7 +333,7 @@
                 { name: 'Hold', duration: UIElements.inputs.holdOut.value, scale: 0.3, className: 'phase-hold-out', note: null }
             ];
 
-            let nextPhaseTime = Date.now();
+            let nextPhaseTime = getNowMs();
 
             function runNextPhase() {
                 if (!state.isRunning) return;
@@ -335,9 +346,11 @@
                     runNextPhase(); return;
                 }
 
-                // Text Transition
+                // Text Transition - track timeout so it can be cancelled on stop
                 UIElements.instruction.style.opacity = 0;
-                setTimeout(() => {
+                clearTimeout(timers.instruction);
+                timers.instruction = setTimeout(() => {
+                    if (!state.isRunning) return; // Guard against orphaned callback
                     UIElements.instruction.textContent = phase.name;
                     UIElements.instruction.style.opacity = 1;
                 }, 200);
@@ -358,11 +371,11 @@
                     if(countdown > 0) UIElements.timer.textContent = Math.ceil(countdown);
                 }, 1000);
                 
-                // Drift correction
+                // Drift correction using Temporal-based timestamps
                 nextPhaseTime += phase.duration * 1000;
-                let delay = nextPhaseTime - Date.now();
+                let delay = nextPhaseTime - getNowMs();
                 if (delay < -100) {
-                     nextPhaseTime = Date.now() + phase.duration * 1000;
+                     nextPhaseTime = getNowMs() + phase.duration * 1000;
                      delay = phase.duration * 1000;
                 }
 
@@ -371,14 +384,19 @@
                     runNextPhase();
                 }, Math.max(0, delay));
             }
-            nextPhaseTime = Date.now();
+            nextPhaseTime = getNowMs();
             runNextPhase();
         }
         
         function stopBreathing(isSessionComplete = false) {
             if (isSessionComplete) logSession();
             state.isRunning = false;
-            Object.values(timers).forEach(timer => clearInterval(timer));
+            // Clear all timers (both interval and timeout types)
+            Object.keys(timers).forEach(key => {
+                clearTimeout(timers[key]);
+                clearInterval(timers[key]);
+                timers[key] = null;
+            });
             updateUIForState(false);
             UIElements.instruction.textContent = isSessionComplete ? 'Complete!' : 'Ready?';
         }
@@ -392,7 +410,7 @@
         }
 
         function checkSessionTime() {
-            const remaining = Math.round((sessionEndTime - Date.now()) / 1000);
+            const remaining = Math.round((sessionEndTime - getNowMs()) / 1000);
             if (remaining <= 0) stopBreathing(true);
             else UIElements.sessionTimeDisplay.textContent = `Time: ${Math.floor(remaining/60)}:${(remaining%60).toString().padStart(2,'0')}`;
         }
