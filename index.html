@@ -129,6 +129,7 @@
                     <button class="preset-btn p-2 bg-white/30 rounded-lg" data-preset="boxBreathing">Box Breathing</button>
                     <button class="preset-btn p-2 bg-white/30 rounded-lg" data-preset="resonance">Resonance</button>
                     <button class="preset-btn p-2 bg-white/30 rounded-lg" data-preset="vooBreathing">VOO Breath</button>
+                    <button class="preset-btn p-2 bg-white/30 rounded-lg md:col-span-2" data-preset="physiologicalSigh">Physiological Sigh</button>
                 </div>
                 <p id="preset-description" class="text-sm mt-4 h-16 text-center" style="color: var(--text-secondary);"></p>
             </div>
@@ -225,7 +226,8 @@
             extendedExhale: { name: "Extended Exhale", values: [4, 2, 8, 0], duration: 2, desc: "Promotes calm by making the exhale longer than the inhale." },
             boxBreathing: { name: "Box Breathing", values: [4, 4, 4, 4], duration: 2, desc: "A simple technique to calm stress and improve focus." },
             resonance: { name: "Resonance", values: [5.5, 0, 5.5, 0], duration: 5, desc: "Aims to maximize HRV by breathing at a resonant frequency." },
-            vooBreathing: { name: "VOO Breath", values: [4, 1, 8, 0], duration: 3, desc: "Uses sound vibration to stimulate the vagus nerve." }
+            vooBreathing: { name: "VOO Breath", values: [4, 1, 8, 0], duration: 3, desc: "Uses sound vibration to stimulate the vagus nerve." },
+            physiologicalSigh: { name: "Physiological Sigh", values: [3, 1, 6, 0], duration: 5, desc: "Two inhales (double breath) then a long exhale. Fast stress relief; calms the nervous system." }
         };
 
         let synth;
