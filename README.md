@@ -14,6 +14,8 @@ A simple, clean, and interactive web-based application to guide your breathwork 
 
   - VOO (Humming) Breathing
 
+  - Physiological Sigh (Cyclic Sighing)
+
 - Smart Duration: Each preset automatically sets the session to its research-backed minimum effective duration.
 
 - Fully Customizable: Manually adjust the duration (in seconds) for each phase of the breath cycle (Inhale, Hold In, Exhale, Hold Out).
@@ -45,6 +47,8 @@ This is a self-contained web application. No installation or dependencies are re
 - Resonance Breathing: A method to maximize heart rate variability (HRV) by syncing your breath to a specific, calming rhythm (typically around 5.5-6 breaths per minute).
 
 - VOO Breath: This technique uses an extended exhale combined with humming a deep "VOO" sound. The gentle vibration created by the hum directly stimulates the vagus nerve, deepening the relaxation response.
+
+- Physiological Sigh: Two consecutive inhales through the nose (the second a short "top-up" to fully fill the lungs) followed by a long, slow exhale. The body does this naturally every few minutes; as a deliberate practice it can quickly reduce stress and shift the nervous system toward a calmer state. Research (e.g., Stanford) supports cyclic sighing for mood and stress relief.
 
 # How to Deploy
 You can easily host this app for free on a public URL using any of these services:
