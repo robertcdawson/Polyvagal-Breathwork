@@ -2,11 +2,18 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <meta name="description" content="Guided breathwork practice with polyvagal techniques: extended exhale, box breathing, resonance, VOO breath, and physiological sigh. Visual pacer and optional audio cues.">
     <meta name="theme-color" content="#a8e0ff">
     <title>Advanced Breathwork</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><circle cx='16' cy='16' r='14' fill='none' stroke='%233b82f6' stroke-width='2'/><circle cx='16' cy='16' r='6' fill='%233b82f6' opacity='0.6'/></svg>">
+    <!-- Installable home-screen app (iOS Safari + standard PWA) -->
+    <link rel="manifest" href="manifest.webmanifest">
+    <link rel="apple-touch-icon" href="icon-180.png">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Breathwork">
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Audio Library -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.7.77/Tone.js"></script>
@@ -69,6 +76,24 @@
             transition: background 0.5s ease-in-out;
             color: var(--text-primary);
         }
+
+        /* iOS Safari: use dynamic viewport height so the collapsing toolbar
+           does not clip content, and pad for the notch / home indicator. */
+        .app-shell {
+            min-height: 100vh; /* fallback for older browsers */
+            min-height: -webkit-fill-available;
+            min-height: 100dvh;
+            padding: max(1rem, env(safe-area-inset-top)) max(1rem, env(safe-area-inset-right)) max(1rem, env(safe-area-inset-bottom)) max(1rem, env(safe-area-inset-left));
+        }
+        @media (min-width: 640px) {
+            .app-shell {
+                padding: max(1.5rem, env(safe-area-inset-top)) max(1.5rem, env(safe-area-inset-right)) max(1.5rem, env(safe-area-inset-bottom)) max(1.5rem, env(safe-area-inset-left));
+            }
+        }
+
+        /* iOS Safari zooms the page when focusing a control whose font-size is
+           below 16px; pin form controls to 16px to prevent that jump. */
+        input, select, button { font-size: 16px; }
         .main-card { background-color: var(--card-bg); }
         .btn-primary { background-color: var(--button-primary-bg); }
         .btn-primary:hover { background-color: var(--button-primary-hover); }
@@ -122,7 +147,7 @@
     </style>
 </head>
 <body class="gradient-bg">
-    <main class="min-h-screen flex flex-col items-center justify-center p-4 sm:p-6" id="main-content">
+    <main class="app-shell flex flex-col items-center justify-center" id="main-content">
         <div id="mainCard" class="main-card w-full max-w-lg mx-auto backdrop-blur-md rounded-2xl shadow-lg p-6 md:p-8 text-center transition-colors duration-500">
             <h1 class="session-collapse-heading text-2xl md:text-3xl font-bold mb-2">Advanced Breathwork</h1>
 
@@ -157,7 +182,7 @@
                         </div>
                         <div>
                             <label id="durationLabel" for="durationInput" class="block mb-2">Duration (min)</label>
-                            <input type="number" id="durationInput" class="control-height w-full px-3 py-2 text-center bg-white/50 rounded-lg border-2 border-transparent focus:border-blue-400 focus:outline-none" value="5" min="1" aria-label="Session duration">
+                            <input type="number" inputmode="decimal" id="durationInput" class="control-height w-full px-3 py-2 text-center bg-white/50 rounded-lg border-2 border-transparent focus:border-blue-400 focus:outline-none" value="5" min="1" aria-label="Session duration">
                         </div>
                     </div>
                     <div class="flex justify-center mb-6">
@@ -181,16 +206,22 @@
                     <button type="button" class="preset-btn control-height p-3 bg-white/50 rounded-lg text-left col-span-2 md:col-span-1" data-preset="physiologicalSigh">Physiological Sigh</button>
                 </div>
                 <p id="preset-description" class="text-sm mt-4 min-h-[4rem] text-center flex items-center justify-center" style="color: var(--text-secondary);" aria-live="polite"></p>
+                <div id="resonanceControl" class="hidden mt-2 text-left">
+                    <label for="resonanceRate" class="block mb-2 text-sm">Resonance rate: <span id="resonanceRateValue">6.0</span> breaths/min</label>
+                    <input type="range" id="resonanceRate" min="4.5" max="6.5" step="0.5" value="6" class="w-full" aria-label="Resonance breathing rate in breaths per minute">
+                    <button type="button" id="findResonanceButton" class="mt-3 control-height w-full px-3 py-2 bg-white/50 rounded-lg text-sm">Find my resonance (guided sweep)</button>
+                    <p class="text-xs mt-2" style="color: var(--text-secondary);">Most people resonate between 4.5 and 6.5 breaths/min. Try a few rates and keep the one that feels smoothest.</p>
+                </div>
             </section>
 
             <section id="settings" class="space-y-4 text-left session-collapse" aria-labelledby="advanced-settings-heading">
                 <details>
                     <summary id="advanced-settings-heading" class="font-semibold cursor-pointer control-height flex items-center rounded">Advanced Settings</summary>
                     <div class="mt-4 space-y-4">
-                        <div class="flex items-center justify-between gap-4"><label for="inhale">Inhale (s)</label><input type="number" id="inhale" class="control-height w-20 p-2 text-center bg-white/50 rounded-lg" value="4" min="1" aria-label="Inhale duration in seconds"></div>
-                        <div class="flex items-center justify-between gap-4"><label for="holdIn">Hold In (s)</label><input type="number" id="holdIn" class="control-height w-20 p-2 text-center bg-white/50 rounded-lg" value="2" min="0" aria-label="Hold after inhale in seconds"></div>
-                        <div class="flex items-center justify-between gap-4"><label for="exhale">Exhale (s)</label><input type="number" id="exhale" class="control-height w-20 p-2 text-center bg-white/50 rounded-lg" value="8" min="1" aria-label="Exhale duration in seconds"></div>
-                        <div class="flex items-center justify-between gap-4"><label for="holdOut">Hold Out (s)</label><input type="number" id="holdOut" class="control-height w-20 p-2 text-center bg-white/50 rounded-lg" value="0" min="0" aria-label="Hold after exhale in seconds"></div>
+                        <div class="flex items-center justify-between gap-4"><label for="inhale">Inhale (s)</label><input type="number" inputmode="decimal" id="inhale" class="control-height w-20 p-2 text-center bg-white/50 rounded-lg" value="4" min="1" aria-label="Inhale duration in seconds"></div>
+                        <div class="flex items-center justify-between gap-4"><label for="holdIn">Hold In (s)</label><input type="number" inputmode="decimal" id="holdIn" class="control-height w-20 p-2 text-center bg-white/50 rounded-lg" value="2" min="0" aria-label="Hold after inhale in seconds"></div>
+                        <div class="flex items-center justify-between gap-4"><label for="exhale">Exhale (s)</label><input type="number" inputmode="decimal" id="exhale" class="control-height w-20 p-2 text-center bg-white/50 rounded-lg" value="8" min="1" aria-label="Exhale duration in seconds"></div>
+                        <div class="flex items-center justify-between gap-4"><label for="holdOut">Hold Out (s)</label><input type="number" inputmode="decimal" id="holdOut" class="control-height w-20 p-2 text-center bg-white/50 rounded-lg" value="0" min="0" aria-label="Hold after exhale in seconds"></div>
                     </div>
                 </details>
             </section>
@@ -243,6 +274,10 @@
             settings: getEl('settings'),
             presetsDiv: getEl('presets'),
             presetDescription: getEl('preset-description'),
+            resonanceControl: getEl('resonanceControl'),
+            resonanceRate: getEl('resonanceRate'),
+            resonanceRateValue: getEl('resonanceRateValue'),
+            findResonanceButton: getEl('findResonanceButton'),
             durationInput: getEl('durationInput'),
             durationLabel: getEl('durationLabel'),
             sessionTimeDisplay: getEl('sessionTimeDisplay'),
@@ -266,6 +301,8 @@
             audioEnabled: false,
             currentPracticeMode: 'cycles',
             currentPreset: 'extendedExhale',
+            resonanceBpm: 6,
+            sweep: null,
             userId: null,
             isAuthReady: false
         };
@@ -290,14 +327,71 @@
         function releaseWakeLock() {
             if (wakeLock) { wakeLock.release().catch(() => {}); wakeLock = null; }
         }
+
+        // iOS releases the screen wake lock and may suspend the audio context
+        // whenever the tab is hidden (lock screen, app switch). Re-acquire both
+        // when the user returns mid-session so the pacer keeps the screen awake
+        // and audio cues keep playing.
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState !== 'visible' || !state.isRunning) return;
+            requestWakeLock();
+            if (state.audioEnabled && typeof Tone !== 'undefined' && Tone.context.state !== 'running') {
+                Tone.context.resume().catch(() => {});
+            }
+        });
         
+        // Each technique carries its research-backed dosing (mode + minutes) so
+        // selecting it primes a session of the right length in one tap.
+        // `values` prefills the editable Advanced Settings (Inhale/Hold/Exhale/Hold);
+        // `structured` techniques define their own phase sequence (see getActivePhases)
+        // because a fixed 4-slot cycle cannot express e.g. a double inhale.
         const presets = {
-            extendedExhale: { name: "Extended Exhale", values: [4, 2, 8, 0], duration: 2, desc: "Promotes calm by making the exhale longer than the inhale." },
-            boxBreathing: { name: "Box Breathing", values: [4, 4, 4, 4], duration: 2, desc: "A simple technique to calm stress and improve focus." },
-            resonance: { name: "Resonance", values: [5.5, 0, 5.5, 0], duration: 5, desc: "Aims to maximize HRV by breathing at a resonant frequency." },
-            vooBreathing: { name: "VOO Breath", values: [4, 1, 8, 0], duration: 3, desc: "Uses sound vibration to stimulate the vagus nerve." },
-            physiologicalSigh: { name: "Physiological Sigh", values: [3, 1, 6, 0], duration: 5, desc: "Two inhales (double breath) then a long exhale. Fast stress relief; calms the nervous system." }
+            extendedExhale: { name: "Extended Exhale", values: [4, 2, 8, 0], mode: 'time', minutes: 5, desc: "Exhale longer than the inhale (~1:2) to engage the parasympathetic, rest-and-digest response. Inhale through the nose, exhale slowly." },
+            boxBreathing: { name: "Box Breathing", values: [4, 4, 4, 4], mode: 'time', minutes: 5, desc: "Equal inhale, hold, exhale, and hold. A simple, balanced pattern for calming stress and steadying focus." },
+            resonance: { name: "Resonance", structured: true, mode: 'time', minutes: 5, desc: "Slow, even breathing near your resonance frequency to maximize heart-rate variability. Adjust the rate below to find what feels smoothest." },
+            vooBreathing: { name: "VOO Breath", structured: true, values: [4, 1, 8, 0], mode: 'time', minutes: 5, desc: "Inhale through the nose, then hum a long, low \"voo\" on the exhale. The vibration helps stimulate the vagus nerve." },
+            physiologicalSigh: { name: "Cyclic Sighing", structured: true, values: [3, 1, 6, 0], mode: 'time', minutes: 5, desc: "A full inhale through the nose, a short second inhale to top up, then a long, slow exhale through the mouth. The most effective pattern for lifting mood and easing stress (Balban et al., 2023)." }
         };
+
+        // --- Breathing phase definitions ---
+        // A phase: { name (instruction text), duration (s), scale (target circle
+        // scale 0.3-1.0), className (color), note (audio cue or null) }.
+        const SIGH_PHASES = [
+            { name: 'Inhale (nose)', duration: 2.5, scale: 0.78, className: 'phase-inhale', note: 'C5' },
+            { name: 'Inhale again', duration: 1.0, scale: 1.0, className: 'phase-inhale', note: 'E5' },
+            { name: 'Exhale (mouth)', duration: 6.5, scale: 0.3, className: 'phase-exhale', note: 'C4' }
+        ];
+        const VOO_PHASES = [
+            { name: 'Inhale (nose)', duration: 4, scale: 1.0, className: 'phase-inhale', note: 'C5' },
+            { name: 'Hold', duration: 1, scale: 1.0, className: 'phase-hold-in', note: null },
+            { name: 'Exhale — hum "voo"', duration: 8, scale: 0.3, className: 'phase-exhale', note: 'C3' }
+        ];
+
+        const RESONANCE_BPM_MIN = 4.5;
+        const RESONANCE_BPM_MAX = 6.5;
+        function resonancePhases() {
+            const half = +(60 / state.resonanceBpm / 2).toFixed(2);
+            return [
+                { name: 'Inhale', duration: half, scale: 1.0, className: 'phase-inhale', note: 'C5' },
+                { name: 'Exhale', duration: half, scale: 0.3, className: 'phase-exhale', note: 'C4' }
+            ];
+        }
+        function phasesFromInputs() {
+            return [
+                { name: 'Inhale', duration: +UIElements.inputs.inhale.value, scale: 1.0, className: 'phase-inhale', note: 'C5' },
+                { name: 'Hold', duration: +UIElements.inputs.holdIn.value, scale: 1.0, className: 'phase-hold-in', note: null },
+                { name: 'Exhale', duration: +UIElements.inputs.exhale.value, scale: 0.3, className: 'phase-exhale', note: 'C4' },
+                { name: 'Hold', duration: +UIElements.inputs.holdOut.value, scale: 0.3, className: 'phase-hold-out', note: null }
+            ];
+        }
+        function getActivePhases() {
+            switch (state.currentPreset) {
+                case 'physiologicalSigh': return SIGH_PHASES;
+                case 'vooBreathing': return VOO_PHASES;
+                case 'resonance': return resonancePhases();
+                default: return phasesFromInputs(); // 4-field presets and custom
+            }
+        }
 
         let synth;
         function setupAudio() {
@@ -342,14 +436,31 @@
             const preset = presets[presetName];
             if (!preset) return;
             state.currentPreset = presetName;
-            const [inhale, holdIn, exhale, holdOut] = preset.values;
-            UIElements.inputs.inhale.value = inhale;
-            UIElements.inputs.holdIn.value = holdIn;
-            UIElements.inputs.exhale.value = exhale;
-            UIElements.inputs.holdOut.value = holdOut;
-            UIElements.durationInput.value = preset.duration;
+            if (preset.values) {
+                const [inhale, holdIn, exhale, holdOut] = preset.values;
+                UIElements.inputs.inhale.value = inhale;
+                UIElements.inputs.holdIn.value = holdIn;
+                UIElements.inputs.exhale.value = exhale;
+                UIElements.inputs.holdOut.value = holdOut;
+            }
+            // Apply the technique's research-backed dosing (mode + amount).
+            if (preset.mode) {
+                state.currentPracticeMode = preset.mode;
+                UIElements.practiceMode.value = preset.mode;
+                UIElements.durationLabel.textContent = preset.mode === 'time' ? 'Duration (min)' : 'Number of Cycles';
+            }
+            if (preset.minutes != null) UIElements.durationInput.value = preset.minutes;
+            toggleResonanceControl(presetName === 'resonance');
             UIElements.presetDescription.textContent = preset.desc;
             document.querySelectorAll('.preset-btn').forEach(btn => btn.classList.toggle('active', btn.dataset.preset === presetName));
+        }
+
+        function toggleResonanceControl(show) {
+            if (UIElements.resonanceControl) UIElements.resonanceControl.classList.toggle('hidden', !show);
+        }
+        function updateResonanceUI() {
+            if (UIElements.resonanceRate) UIElements.resonanceRate.value = state.resonanceBpm;
+            if (UIElements.resonanceRateValue) UIElements.resonanceRateValue.textContent = (+state.resonanceBpm).toFixed(1);
         }
 
         function startBreathing() {
@@ -358,7 +469,11 @@
             requestWakeLock();
             updateUIForState(true);
             let currentPhaseIndex = -1;
-            if (state.currentPracticeMode === 'time') {
+            let cyclePhases = getActivePhases();
+            if (state.sweep && state.sweep.active) {
+                updateProgressRing(0);
+                UIElements.sessionTimeDisplay.textContent = `Finding resonance — ${(+state.resonanceBpm).toFixed(1)} breaths/min`;
+            } else if (state.currentPracticeMode === 'time') {
                 sessionStartTime = Date.now();
                 sessionEndTime = sessionStartTime + parseFloat(UIElements.durationInput.value) * 60000;
                 timers.session = setInterval(checkSessionTime, 1000);
@@ -372,23 +487,23 @@
             // Initial state for animation
             UIElements.circleFill.style.transform = 'scale(0.3)';
 
-            const cyclePhases = [
-                { name: 'Inhale', duration: UIElements.inputs.inhale.value, scale: 1.0, className: 'phase-inhale', note: 'C5' },
-                { name: 'Hold', duration: UIElements.inputs.holdIn.value, scale: 1.0, className: 'phase-hold-in', note: null },
-                { name: 'Exhale', duration: UIElements.inputs.exhale.value, scale: 0.3, className: 'phase-exhale', note: 'C4' },
-                { name: 'Hold', duration: UIElements.inputs.holdOut.value, scale: 0.3, className: 'phase-hold-out', note: null }
-            ];
-
             let nextPhaseTime = Date.now();
 
             function runNextPhase() {
                 if (!state.isRunning) return;
-                currentPhaseIndex = (currentPhaseIndex + 1) % cyclePhases.length;
+                currentPhaseIndex++;
+                // Wrap at the end of the cycle and refresh phases so live changes
+                // (resonance rate, the guided sweep, custom edits) take effect.
+                if (currentPhaseIndex >= cyclePhases.length) {
+                    currentPhaseIndex = 0;
+                    cyclePhases = getActivePhases();
+                }
+                const lastIndex = cyclePhases.length - 1;
                 const phase = cyclePhases[currentPhaseIndex];
-                
+
                 // Skip 0-duration phases
                 if (phase.duration <= 0) {
-                    if (currentPhaseIndex === 3) handleCycleEnd();
+                    if (currentPhaseIndex === lastIndex) handleCycleEnd();
                     runNextPhase(); return;
                 }
 
@@ -424,7 +539,7 @@
                 }
 
                 timers.breathCycle = setTimeout(() => {
-                    if (currentPhaseIndex === 3) handleCycleEnd();
+                    if (currentPhaseIndex === lastIndex) handleCycleEnd();
                     runNextPhase();
                 }, Math.max(0, delay));
             }
@@ -434,7 +549,9 @@
         
         function stopBreathing(isSessionComplete = false) {
             if (completionTimeout) clearTimeout(completionTimeout);
-            if (isSessionComplete) logSession();
+            const wasSweep = !!(state.sweep && state.sweep.active);
+            state.sweep = null;
+            if (isSessionComplete && !wasSweep) logSession();
             state.isRunning = false;
             releaseWakeLock();
             Object.values(timers).forEach(timer => clearInterval(timer));
@@ -459,12 +576,37 @@
         }
 
         function handleCycleEnd() {
+            if (state.sweep && state.sweep.active) {
+                const sweep = state.sweep;
+                sweep.cycleCount++;
+                if (sweep.cycleCount >= sweep.cyclesPerRate) {
+                    sweep.cycleCount = 0;
+                    sweep.idx++;
+                    if (sweep.idx >= sweep.rates.length) { stopBreathing(true); return; }
+                    state.resonanceBpm = sweep.rates[sweep.idx];
+                    updateResonanceUI();
+                    UIElements.sessionTimeDisplay.textContent = `Finding resonance — ${(+state.resonanceBpm).toFixed(1)} breaths/min`;
+                }
+                updateProgressRing((sweep.idx + sweep.cycleCount / sweep.cyclesPerRate) / sweep.rates.length);
+                return;
+            }
             if (state.currentPracticeMode === 'cycles') {
                 cyclesRemaining--;
                 updateProgressRing((totalCycles - cyclesRemaining) / totalCycles);
                 if (cyclesRemaining > 0) UIElements.sessionTimeDisplay.textContent = `${cyclesRemaining} cycles remaining`;
                 else stopBreathing(true);
             }
+        }
+
+        // Guided sweep through candidate resonance rates so the user can notice
+        // which feels smoothest (Lehrer protocol: 4.5-6.5 bpm in 0.5 steps).
+        function startResonanceSweep() {
+            if (state.isRunning) return;
+            applyPreset('resonance');
+            state.sweep = { active: true, rates: [4.5, 5, 5.5, 6, 6.5], idx: 0, cyclesPerRate: 3, cycleCount: 0 };
+            state.resonanceBpm = state.sweep.rates[0];
+            updateResonanceUI();
+            startBreathing();
         }
 
         function checkSessionTime() {
@@ -502,9 +644,17 @@
             UIElements.audioToggle.classList.toggle('btn-primary', state.audioEnabled);
             if (state.audioEnabled && !synth) setupAudio();
         });
+        // Status-bar / address-bar tint per theme (matches each gradient start color).
+        const THEME_COLORS = { default: '#a8e0ff', 'theme-forest': '#d4e2d4', 'theme-cosmic': '#232526' };
+        function updateThemeColor(theme) {
+            const meta = document.querySelector('meta[name="theme-color"]');
+            if (meta) meta.setAttribute('content', THEME_COLORS[theme] || THEME_COLORS.default);
+        }
+
         UIElements.themeSelector.addEventListener('change', (e) => {
             const theme = e.target.value;
             UIElements.body.className = theme === 'default' ? '' : theme;
+            updateThemeColor(theme);
             localStorage.setItem('theme', theme);
         });
         UIElements.historyButton.addEventListener('click', () => {
@@ -515,10 +665,34 @@
         UIElements.stopButton.addEventListener('click', () => stopBreathing(false));
         UIElements.presetsDiv.addEventListener('click', (e) => { if (e.target.dataset.preset) applyPreset(e.target.dataset.preset) });
 
+        if (UIElements.resonanceRate) {
+            UIElements.resonanceRate.addEventListener('input', (e) => {
+                let bpm = parseFloat(e.target.value);
+                bpm = Math.min(RESONANCE_BPM_MAX, Math.max(RESONANCE_BPM_MIN, bpm));
+                state.resonanceBpm = bpm;
+                UIElements.resonanceRateValue.textContent = bpm.toFixed(1);
+            });
+        }
+        if (UIElements.findResonanceButton) {
+            UIElements.findResonanceButton.addEventListener('click', startResonanceSweep);
+        }
+
+        // Manually editing the phase durations means the user is no longer on a
+        // named preset; treat it as a custom, input-driven pattern.
+        Object.values(UIElements.inputs).forEach((input) => {
+            input.addEventListener('input', () => {
+                if (state.currentPreset === 'custom') return;
+                state.currentPreset = 'custom';
+                document.querySelectorAll('.preset-btn').forEach(btn => btn.classList.remove('active'));
+                toggleResonanceControl(false);
+                UIElements.presetDescription.textContent = 'Custom pattern — adjust each phase to taste.';
+            });
+        });
+
         async function logSession() {
             if (!isFirebaseConfigured || !state.isAuthReady || !state.userId || !db) return;
             const sessionData = {
-                technique: presets[state.currentPreset].name,
+                technique: (presets[state.currentPreset] && presets[state.currentPreset].name) || 'Custom',
                 mode: state.currentPracticeMode,
                 value: UIElements.durationInput.value,
                 createdAt: serverTimestamp()
@@ -558,15 +732,22 @@
                 UIElements.themeSelector.value = savedTheme;
                 UIElements.body.className = savedTheme === 'default' ? '' : savedTheme;
             }
+            updateThemeColor(UIElements.themeSelector.value);
 
+            updateResonanceUI();
+            // applyPreset sets the technique's recommended mode, label, and duration.
             applyPreset('extendedExhale');
-            
-            // Ensure UI matches default 'cycles' mode
-            UIElements.practiceMode.value = state.currentPracticeMode;
-            UIElements.durationLabel.textContent = state.currentPracticeMode === 'time' ? 'Duration (min)' : 'Number of Cycles';
-            
+
             updateUIForState(false);
         };
+
+        // Register the service worker so the app is installable and works
+        // offline after the first load. Skipped on file:// where SWs are unavailable.
+        if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js').catch((e) => console.warn('SW registration failed:', e));
+            });
+        }
     </script>
 </body>
 </html>
